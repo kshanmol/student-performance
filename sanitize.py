@@ -84,6 +84,37 @@ import os
 1 - no
 """
 
+def process(file_name_string, dummy_values):
+
+	file_name = os.path.join(os.path.dirname(__file__), 'data/'+ file_name_string)
+	output_file_name = os.path.join(os.path.dirname(__file__), 'data/'+ 'transformed-' + file_name_string)
+	output_data = []
+
+	with open(file_name, 'r') as f:
+		headers = f.readline()
+		for line in f:
+			data = line.split(';')
+			transformed_data = []
+			for idx,item in enumerate(data):
+
+				item = item.strip("\"")
+				item = item.strip("\n")
+
+				if(idx+1 not in dummy_values):
+					transformed_data.append(int(item))
+				else:
+					values = dummy_values[idx+1][item]
+					if isinstance(values, list):
+						transformed_data.extend(values)
+					else:
+						transformed_data.append(values)
+			result = ",".join(map(str, transformed_data)) + '\n'
+			output_data.append(result)
+
+	with open(output_file_name, 'w') as f:
+		for item in output_data:
+			f.write(item)
+
 
 def main():
 
@@ -112,34 +143,9 @@ def main():
 	dummy_values[22] = {"yes":0, "no":1}
 	dummy_values[23] = {"yes":0, "no":1}
 
-	file_name = os.path.join(os.path.dirname(__file__), 'data/'+ 'student-mat.csv')
-	output_file_name = os.path.join(os.path.dirname(__file__), 'data/'+ 'transformed-student-mat.csv')
-	output_data = []
+	process('student-mat.csv', dummy_values)
+	process('student-por.csv', dummy_values)
 
-	with open(file_name, 'r') as f:
-		headers = f.readline()
-		for line in f:
-			data = line.split(';')
-			transformed_data = []
-			for idx,item in enumerate(data):
-
-				item = item.strip("\"")
-				item = item.strip("\n")
-
-				if(idx+1 not in dummy_values):
-					transformed_data.append(int(item))
-				else:
-					values = dummy_values[idx+1][item]
-					if isinstance(values, list):
-						transformed_data.extend(values)
-					else:
-						transformed_data.append(values)
-			result = ",".join(map(str, transformed_data)) + '\n'
-			output_data.append(result)
-
-	with open(output_file_name, 'w') as f:
-		for item in output_data:
-			f.write(item)
 
 if __name__ == '__main__':
 	main()

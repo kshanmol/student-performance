@@ -1,7 +1,9 @@
 import numpy as np
+import random
 from sklearn import datasets, linear_model
 from sklearn.preprocessing import StandardScaler
 import os
+import sys
 
 def find_optimal_ridge_parameter(random_state, low, high, x_test, y_test, x_train, y_train):
 	for i in range(25):
@@ -18,13 +20,29 @@ def find_optimal_ridge_parameter(random_state, low, high, x_test, y_test, x_trai
 		else: high = temp[1]
 	return (low + high) / 2
 
-def linear_regression(dataset_file_name, train_data_perc):
+def process(dataset_file_name, shuffle = False):
+	
 	x, y = [], []
+	data = []
+
 	with open(dataset_file_name, 'r') as f:
 		for line in f:
-			line = line.split(",")
-			x.append([int(val) for val in line[:-1]])
-			y.append(int(line[-1:][0].split('\n')[0]))
+			data.append(line)
+
+	if shuffle:
+		random.shuffle(data)
+
+	for line in data:
+		line = line.split(",")
+		x.append(map(int, line[:-1]))
+		y.append(int(line[-1:][0].split('\n')[0]))
+
+	return x, y
+
+
+def linear_regression(dataset_file_name, train_data_perc):
+
+	x,y = process(dataset_file_name, True)
 
 	train_data_length = train_data_perc * len(x) / 100
 	x_train, y_train = x[:train_data_length], y[:train_data_length]
@@ -37,7 +55,7 @@ def linear_regression(dataset_file_name, train_data_perc):
 	x_test = scaler.transform(x_test)
 
 	#SGD
-	random_seed = 14
+	random_seed = 30
 	min_alpha, max_alpha = 0.0, 100.0
 
 	opt_alpha = find_optimal_ridge_parameter(random_seed, min_alpha, max_alpha, x_test, y_test, x_train, y_train)
@@ -61,6 +79,20 @@ def linear_regression(dataset_file_name, train_data_perc):
 	print "Regressor score: ", regressor.score(x_test, y_test)
 
 
-file_name = os.path.join(os.path.dirname(__file__), 'data/'+ 'transformed-student-mat.csv')
+if __name__ == '__main__':
 
-linear_regression(file_name, 50)
+	if(len(sys.argv) == 1):
+		print "Usage:\n0 for mat.csv\n1 for por.csv"
+		sys.exit(0)
+	choice = sys.argv[1]
+	if(choice == '1'):
+		choice = '-por.csv'
+	elif(choice == '0'):
+		choice = '-mat.csv'
+	else:
+		print "Usage:\n0 for mat.csv\n1 for por.csv"
+		sys.exit(0)		
+
+	file_name = os.path.join(os.path.dirname(__file__), 'data/'+ 'transformed-student' + choice)
+
+	linear_regression(file_name, 95)
