@@ -24,9 +24,9 @@ def process(dataset_file_name, shuffle = False):
 
 	return x, y
 
-def k_fold_cross_validation(random_seed, x, y, delta, k):
+def k_fold_cross_validation(random_seed, x, y, delta, k, penalty):
 	MSE = 0.0
-	regressor = linear_model.SGDRegressor(random_state=random_seed, alpha=delta)
+	regressor = linear_model.SGDRegressor(random_state = random_seed, alpha = delta, penalty = penalty)
 	fraction_length = len(x) / k
 	number_of_fractions = (len(x) / fraction_length)
 	for i in range(0, number_of_fractions):
@@ -40,18 +40,18 @@ def k_fold_cross_validation(random_seed, x, y, delta, k):
 		MSE += np.mean(map(lambda x, y: (x - y) ** 2, result, y_test))
 	return MSE / k
 
-def find_optimal_ridge_parameter(random_seed, low, high, x, y, k):
+def find_optimal_ridge_parameter(random_seed, low, high, x, y, k, penalty):
 	for i in range(25):
 		temp = [(2*low + high) / 3, (low + 2*high) / 3]
 		val = []
 		for j in range(2):
-			val.append(k_fold_cross_validation(random_seed, x, y, temp[j], k))
+			val.append(k_fold_cross_validation(random_seed, x, y, temp[j], k, penalty))
 
 		if(val[0] > val[1]): low = temp[0]
 		else: high = temp[1]
 	return (low + high) / 2
 
-def linear_regression(dataset_file_name, train_data_perc, random_seed = 14, shuffle = False):
+def linear_regression(dataset_file_name, train_data_perc, penalty, random_seed = 14, shuffle = False):
 
 	x, y = process(dataset_file_name, shuffle)
 
@@ -66,11 +66,11 @@ def linear_regression(dataset_file_name, train_data_perc, random_seed = 14, shuf
 	x_test = scaler.transform(x_test)
 
 	#SGD
-	min_alpha, max_alpha = 0.0, 100.0
+	min_delta, max_delta = 0.0, 100.0
 
-	opt_alpha = find_optimal_ridge_parameter(random_seed, min_alpha, max_alpha, x_train, y_train, 10)
-	print opt_alpha
-	regressor = linear_model.SGDRegressor(random_state=random_seed, alpha=opt_alpha)
+	opt_delta = find_optimal_ridge_parameter(random_seed, min_delta, max_delta, x_train, y_train, 10, penalty)
+	print opt_delta
+	regressor = linear_model.SGDRegressor(random_state = random_seed, alpha = opt_delta, penalty = penalty)
 	regressor.fit(x_train, y_train);
 
 	result = regressor.predict(x_test)
@@ -106,5 +106,5 @@ if __name__ == '__main__':
 		sys.exit(0)		
 
 	file_name = os.path.join(os.path.dirname(__file__), 'data/'+ 'transformed-student' + choice)
-
-	linear_regression(file_name, 50)
+	penalty = 'l2' # l1 for LASSO, l2 for ridge
+	linear_regression(file_name, 50, penalty)
