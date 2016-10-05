@@ -2,6 +2,8 @@ import numpy as np
 import random
 from sklearn import datasets, linear_model
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import KFold, cross_val_score
+
 import os
 import sys
 
@@ -27,18 +29,22 @@ def process(dataset_file_name, shuffle = False):
 def k_fold_cross_validation(random_seed, x, y, delta, k, penalty):
 	MSE = 0.0
 	regressor = linear_model.SGDRegressor(random_state = random_seed, alpha = delta, penalty = penalty)
-	fraction_length = len(x) / k
-	number_of_fractions = (len(x) / fraction_length)
-	for i in range(0, number_of_fractions):
-		x_train = np.concatenate((x[:i * fraction_length], x[(i + 1) * fraction_length :]))
-		y_train = np.concatenate((y[:i * fraction_length], y[(i + 1) * fraction_length :]))
-		x_test = x[i * fraction_length : (i + 1) * fraction_length]
-		y_test = y[i * fraction_length : (i + 1) * fraction_length]
-		
-		regressor.fit(x_train, y_train);
-		result = regressor.predict(x_test)
-		MSE += np.mean(map(lambda x, y: (x - y) ** 2, result, y_test))
-	return MSE / k
+	scores = cross_val_score(regressor, x, y, cv = k)
+	# print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+	accuracy = scores.mean()
+	return accuracy
+
+	""" self made cross validator """
+	# kf = KFold(n_splits = k)
+	# scores = cross_val_score(clf, iris.data, iris.target, cv=5)
+	# x, y = np.array(x), np.array(y)
+	# for train, test in kf.split(x):
+	# 	x_train, y_train = x[train], y[train]
+	# 	x_test, y_test = x[test], y[test]
+	# 	regressor.fit(x_train, y_train);
+	# 	result = regressor.predict(x_test)
+	# 	MSE += np.mean(map(lambda x, y: (x - y) ** 2, result, y_test))
+	# return MSE / k
 
 def find_optimal_ridge_parameter(random_seed, low, high, x, y, k, penalty):
 	for i in range(25):
@@ -47,11 +53,11 @@ def find_optimal_ridge_parameter(random_seed, low, high, x, y, k, penalty):
 		for j in range(2):
 			val.append(k_fold_cross_validation(random_seed, x, y, temp[j], k, penalty))
 
-		if(val[0] > val[1]): low = temp[0]
+		if(val[0] < val[1]): low = temp[0]
 		else: high = temp[1]
 	return (low + high) / 2
 
-def linear_regression(dataset_file_name, train_data_perc, penalty, random_seed = 14, shuffle = False):
+def linear_regression(dataset_file_name, train_data_perc, penalty, shuffle = False, random_seed = 14):
 
 	x, y = process(dataset_file_name, shuffle)
 
@@ -107,4 +113,4 @@ if __name__ == '__main__':
 
 	file_name = os.path.join(os.path.dirname(__file__), 'data/'+ 'transformed-student' + choice)
 	penalty = 'l2' # l1 for LASSO, l2 for ridge
-	linear_regression(file_name, 50, penalty)
+	linear_regression(file_name, 50, penalty, True)
