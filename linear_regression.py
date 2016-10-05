@@ -100,7 +100,7 @@ def linear_regression(dataset_file_name, train_data_perc, penalty, shuffle = Fal
 if __name__ == '__main__':
 
 	if(len(sys.argv) == 1):
-		print "Usage:\n0 for mat.csv\n1 for por.csv"
+		print "Usage:\nFirst Argument:\n0 for mat.csv\n1 for por.csv\nSecond Argument:\nl1 for LASSO\nl2 for Ridge"
 		sys.exit(0)
 	choice = sys.argv[1]
 	if(choice == '1'):
@@ -112,5 +112,5 @@ if __name__ == '__main__':
 		sys.exit(0)		
 
 	file_name = os.path.join(os.path.dirname(__file__), 'data/'+ 'transformed-student' + choice)
-	penalty = 'l2' # l1 for LASSO, l2 for ridge
+	penalty = sys.argv[2] # l1 for LASSO, l2 for ridge
 	linear_regression(file_name, 50, penalty, True)
