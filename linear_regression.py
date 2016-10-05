@@ -35,19 +35,31 @@ def linear_regression(dataset_file_name, train_data_perc):
 	
 	x_train = scaler.transform(x_train)
 	x_test = scaler.transform(x_test)
-	
+
+	#SGD
 	random_seed = 14
 	min_alpha, max_alpha = 0.0, 100.0
 
 	opt_alpha = find_optimal_ridge_parameter(random_seed, min_alpha, max_alpha, x_test, y_test, x_train, y_train)
 	print opt_alpha
-
 	regressor = linear_model.SGDRegressor(random_state=14, alpha=opt_alpha)
 	regressor.fit(x_train, y_train); result = regressor.predict(x_test)
 
+	print "SGD solution:"
 	print regressor.coef_
-	print np.mean(map(lambda x, y: (x - y) ** 2, result, y_test))
-	print regressor.score(x_test, y_test)
+	print "MSE: ", np.mean(map(lambda x, y: (x - y) ** 2, result, y_test))
+	print "Regressor score: ", regressor.score(x_test, y_test)
+
+	#Exact Least Squares solution
+
+	regressor = linear_model.LinearRegression()
+	regressor.fit(x_train, y_train); result = regressor.predict(x_test)
+
+	print "Least Squares solution:"
+	print regressor.coef_
+	print "MSE: ", np.mean(map(lambda x, y: (x - y) ** 2, result, y_test))
+	print "Regressor score: ", regressor.score(x_test, y_test)
+
 
 file_name = os.path.join(os.path.dirname(__file__), 'data/'+ 'transformed-student-mat.csv')
 
