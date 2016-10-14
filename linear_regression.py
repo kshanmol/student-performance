@@ -9,6 +9,8 @@ from sklearn.svm import SVR
 import os
 import sys
 
+CONST_RANDOM_SEED = 69
+
 def process(dataset_file_name, shuffle = False):
 	
 	x, y = [], []
@@ -63,7 +65,7 @@ def find_optimal_ridge_parameter(random_seed, x, y, k, penalty):
 	# plt.show()
 	return optimal_delta
 
-def svm(dataset_file_name, train_data_perc, shuffle = False, random_seed = 14):
+def svm(dataset_file_name, train_data_perc, shuffle = False, random_seed = CONST_RANDOM_SEED):
 	x, y = process(dataset_file_name, shuffle)
 
 	train_data_length = train_data_perc * len(x) / 100
@@ -86,7 +88,7 @@ def svm(dataset_file_name, train_data_perc, shuffle = False, random_seed = 14):
 	# y_poly = svr_poly.fit(x_train, y_train).predict(x_test)
 	# print np.mean(map(lambda x, y: (x - y) ** 2, y_poly, y_test))
 
-def linear_regression(dataset_file_name, train_data_perc, penalty, k, shuffle = False, random_seed = 14):
+def linear_regression(dataset_file_name, train_data_perc, penalty, k, shuffle = False, random_seed = CONST_RANDOM_SEED):
 
 	x, y = process(dataset_file_name, shuffle)
 
@@ -136,7 +138,7 @@ def linear_regression(dataset_file_name, train_data_perc, penalty, k, shuffle = 
 	# test_score = regressor.score(x_test, y_test)
 	# return train_score, test_score
 
-def plot_learning_curves(dataset_file_name, penalty, k, start = 10, stop = 100, step = 10, random_seed = 14):
+def plot_learning_curves(dataset_file_name, penalty, k, start = 10, stop = 100, step = 10, random_seed = CONST_RANDOM_SEED):
 	x_axis = [] # train_data_perc
 	y_train, y_test = [], [] # MSE
 	for train_data_perc in range(start, stop, step):
@@ -151,6 +153,8 @@ def plot_learning_curves(dataset_file_name, penalty, k, start = 10, stop = 100, 
 	plt.show()
 
 if __name__ == '__main__':
+
+	random.seed(CONST_RANDOM_SEED)
 
 	if(len(sys.argv) == 1):
 		print "Usage:\nFirst Argument:\n0 for mat.csv\n1 for por.csv\nSecond Argument:\nl1 for LASSO\nl2 for Ridge"
