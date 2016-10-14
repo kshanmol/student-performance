@@ -94,7 +94,8 @@ def linear_regression(dataset_file_name, train_data_perc, penalty, k, shuffle = 
 	x_train, y_train = x[:train_data_length], y[:train_data_length]
 	x_test, y_test = x[train_data_length:], y[train_data_length:]
 
-	print train_data_perc, len(x_train)
+	# print train_data_perc, len(x_train)
+	
 	# to normalize the data attributes
 	scaler = StandardScaler(); scaler.fit(x_train)
 	
@@ -125,9 +126,9 @@ def linear_regression(dataset_file_name, train_data_perc, penalty, k, shuffle = 
 	# print "MSE: ", np.mean(map(lambda x, y: (x - y) ** 2, result, y_test))
 	# print "Regressor score: ", regressor.score(x_test, y_test)
 
-	# if interested in MSE
-	train_error = np.mean(map(lambda x, y: (x - y) ** 2, regressor.predict(x_train), y_train))
-	test_error = np.mean(map(lambda x, y: (x - y) ** 2, regressor.predict(x_test), y_test))
+	# if interested in RMSE
+	train_error = (np.mean(map(lambda x, y: (x - y) ** 2, regressor.predict(x_train), y_train)) ** 0.5)
+	test_error = (np.mean(map(lambda x, y: (x - y) ** 2, regressor.predict(x_test), y_test)) ** 0.5)
 	return train_error, test_error
 
 	# # if interested in accuracy
@@ -166,7 +167,7 @@ if __name__ == '__main__':
 	file_name = os.path.join(os.path.dirname(__file__), 'data/'+ 'transformed-student' + choice)
 	penalty = sys.argv[2] # l1 for LASSO, l2 for ridge
 	
-	# linear_regression(file_name, train_data_perc, penalty, k, True)
+	# linear_regression(file_name, 50, penalty, 10, True)
 	# svm(file_name, 50, True)
 	
 	plot_learning_curves(file_name, penalty, 10)
