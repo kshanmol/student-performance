@@ -5,14 +5,15 @@ import random
 from sklearn import datasets, linear_model
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import PolynomialFeatures
-from sklearn.model_selection import KFold, cross_val_score
+from sklearn.cross_validation import KFold, cross_val_score
+from sklearn.decomposition import PCA
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 CONST_RANDOM_SEED = 69
 
-def process(dataset_file_name, shuffle = False):
+def process(dataset_file_name, shuffle = False, do_PCA = False):
 	
 	x, y = [], []
 	data = []
@@ -26,8 +27,21 @@ def process(dataset_file_name, shuffle = False):
 
 	for line in data:
 		line = line.split(",")
-		x.append(map(int, line[:-1]))
-		y.append(int(line[-1:][0].split('\n')[0]))
+		x.append(map(float, line[:-1]))
+		y.append(float(line[-1:][0].split('\n')[0]))
+
+	if do_PCA:
+		pca = PCA()
+		output_data = pca.fit_transform(x)
+
+		#Find k which explains 95% of variance
+		k = 0
+		explained = 0
+		while(explained < 0.95):
+			explained += pca.explained_variance_ratio_[k]
+			k += 1
+		pca = PCA(k)
+		x = pca.fit_transform(x) 
 
 	return x, y
 
@@ -66,8 +80,8 @@ def find_optimal_ridge_parameter(random_seed, x, y, k, penalty):
 	# plt.show()
 	return optimal_delta
 
-def get_train_test_data(dataset_file_name, train_data_perc, degree, shuffle = True):
-	x, y = process(dataset_file_name, shuffle)
+def get_train_test_data(dataset_file_name, train_data_perc, degree, shuffle = True, do_PCA = False):
+	x, y = process(dataset_file_name, shuffle, do_PCA)
 
 	poly = PolynomialFeatures(degree = degree, interaction_only = False, include_bias = False)
 	x = poly.fit_transform(x)
@@ -97,9 +111,9 @@ def exact_least_squares(dataset_file_name, train_data_perc, degree, shuffle = Tr
 	print "MSE: ", np.mean(map(lambda x, y: (x - y) ** 2, result, y_test))
 	print "Regressor score: ", regressor.score(x_test, y_test)
 
-def linear_regression(dataset_file_name, train_data_perc, penalty, k, degree, max_iter = 5, shuffle = True, random_seed = CONST_RANDOM_SEED):
+def linear_regression(dataset_file_name, train_data_perc, penalty, k, degree, max_iter = 5, shuffle = True, do_PCA = False, random_seed = CONST_RANDOM_SEED):
 
-	x_train, y_train, x_test, y_test = get_train_test_data(dataset_file_name, train_data_perc, degree, shuffle)
+	x_train, y_train, x_test, y_test = get_train_test_data(dataset_file_name, train_data_perc, degree, shuffle, do_PCA)
 
 	#SGD
 
@@ -127,12 +141,12 @@ def linear_regression(dataset_file_name, train_data_perc, penalty, k, degree, ma
 	# test_score = regressor.score(x_test, y_test)
 	# return train_score, test_score
 
-def plot_learning_curves(dataset_file_name, penalty, k, degree, max_iter = 5, start = 10, stop = 100, step = 10, shuffle = True, random_seed = CONST_RANDOM_SEED):
+def plot_learning_curves(dataset_file_name, penalty, k, degree, max_iter = 5, start = 10, stop = 100, step = 10, shuffle = True, do_PCA = False, random_seed = CONST_RANDOM_SEED):
 	x_axis = [] 										# train_data_perc
 	y_train, y_test = [], [] 							# MSE
 
 	for train_data_perc in range(start, stop, step):
-		train_error, test_error = linear_regression(file_name, train_data_perc, penalty, k, degree, max_iter, shuffle, random_seed)
+		train_error, test_error = linear_regression(file_name, train_data_perc, penalty, k, degree, max_iter, shuffle, do_PCA, random_seed)
 		x_axis.append(train_data_perc)
 		y_train.append(train_error)
 		y_test.append(test_error)
@@ -167,4 +181,4 @@ if __name__ == '__main__':
 	
 	# linear_regression(file_name, train_data_perc, penalty, k, degree, max_iter)
 	
-	plot_learning_curves(file_name, penalty, k, degree, max_iter)
+	plot_learning_curves(file_name, penalty, k, degree, max_iter, do_PCA=False)

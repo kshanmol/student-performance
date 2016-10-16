@@ -1,5 +1,7 @@
 import sys
 import os
+import numpy as np
+
 
 """
 1 school - student's school (binary: "GP" - Gabriel Pereira or "MS" - Mousinho da Silveira)
@@ -84,17 +86,35 @@ import os
 1 - no
 """
 
+def find_correlation(data, m, is_numeric = True, filter_threshold = 0.3):
+	result = np.corrcoef(data, rowvar=0)
+	candidates = []
+	for i in xrange(len(result)):
+		for j in xrange(i+1,len(result)):
+			if(abs(result[i][j]) > filter_threshold):
+				candidates.append((abs(result[i][j]),m[i],m[j],result[i][j]))
+	candidates.sort()
+	# for item in candidates:
+	# 	print item[1:]
+
 def process(file_name_string, dummy_values):
 
 	file_name = os.path.join(os.path.dirname(__file__), 'data/'+ file_name_string)
 	output_file_name = os.path.join(os.path.dirname(__file__), 'data/'+ 'transformed-' + file_name_string)
 	output_data = []
 
+	numeric_data = []
+	nominal_data  = []
+	m = {}
+
 	with open(file_name, 'r') as f:
 		headers = f.readline()
 		for line in f:
 			data = line.split(';')
 			transformed_data = []
+			transformed_numeric = []
+			transformed_nominal = []
+
 			for idx,item in enumerate(data):
 
 				item = item.strip("\"")
@@ -102,19 +122,26 @@ def process(file_name_string, dummy_values):
 
 				if(idx+1 not in dummy_values):
 					transformed_data.append(int(item))
+					transformed_numeric.append(int(item))
+					m[len(transformed_numeric)-1] = idx+1
 				else:
 					values = dummy_values[idx+1][item]
 					if isinstance(values, list):
 						transformed_data.extend(values)
+						transformed_nominal.extend(values)
 					else:
 						transformed_data.append(values)
-			result = ",".join(map(str, transformed_data)) + '\n'
-			output_data.append(result)
+						transformed_nominal.append(values)
+
+			output_data.append(transformed_data)
+			numeric_data.append(transformed_numeric)
+			nominal_data.append(transformed_nominal)
+				
+	find_correlation(numeric_data, m)
 
 	with open(output_file_name, 'w') as f:
 		for item in output_data:
-			f.write(item)
-
+			f.write(",".join(map(str, item)) + '\n')
 
 def main():
 
