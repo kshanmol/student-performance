@@ -24,20 +24,19 @@ def process(dataset_file_name, shuffle = False):
 
 	return x, y
 
-def reduced_features(x, threshold = 0.99):
+def reduced_features(x_train, x_test, threshold = 0.99):
 	pca = PCA()
-	output_data = pca.fit_transform(x)
+	output_data = pca.fit_transform(x_train)
 
-	#Find k which explains 95% of variance
+	#Find k which explains 99% of variance
 
-	# print len(x[0])
 	k = 0
 	explained = 0
 	while(explained < threshold):
 		explained += pca.explained_variance_ratio_[k]
 		k += 1
 	pca = PCA(k)
-	x = pca.fit_transform(x)
+	x_train = pca.fit_transform(x_train)
+	x_test = pca.transform(x_test)
 	
-	# print len(x[0])
-	return x
+	return x_train, x_test

@@ -21,13 +21,13 @@ def get_train_test_data(dataset_file_name, train_data_perc, degree, shuffle = Tr
 	poly = PolynomialFeatures(degree = degree, interaction_only = False, include_bias = False)
 	x = poly.fit_transform(x)
 
-	if(do_PCA):
-		x = get_data.reduced_features(x, PCA_threshold)
-
 	train_data_length = train_data_perc * len(x) / 100
 	x_train, y_train = x[:train_data_length], y[:train_data_length]
 	x_test, y_test = x[train_data_length:], y[train_data_length:]
 	
+	if(do_PCA):
+		x_train = get_data.reduced_features(x_train, x_test, PCA_threshold)
+
 	# to normalize the data attributes
 	scaler = StandardScaler(); scaler.fit(x_train)
 	
@@ -58,7 +58,8 @@ def linear_regression(dataset_file_name, train_data_perc, penalty, k, degree, ma
 	regressor = linear_model.SGDRegressor()
 
 	param_grid = [
-		{'alpha': map(lambda x: 2 ** x, range(-10, 10)), 'random_state': [random_seed], 'penalty': [penalty], 'n_iter': [max_iter]}
+		{'alpha': map(lambda x: 2 ** x, range(-10, 10)), 'random_state': [random_seed], 'penalty': [penalty],
+			'n_iter': range(max_iter, max_iter + 1)}
 	]
 
 	best = GridSearchCV(estimator = regressor, param_grid = param_grid, cv = 10)
@@ -72,9 +73,9 @@ def linear_regression(dataset_file_name, train_data_perc, penalty, k, degree, ma
 
 	train_error = (np.mean(map(lambda x, y: (x - y) ** 2, regressor.predict(x_train), y_train)) ** 0.5)
 	test_error = (np.mean(map(lambda x, y: (x - y) ** 2, regressor.predict(x_test), y_test)) ** 0.5)
-	print test_error
-	return train_error, test_error
-
+	# print test_error
+	# return train_error, test_error
+	
 	# # if interested in accuracy
 	# train_score = regressor.score(x_train, y_train)
 	# test_score = regressor.score(x_test, y_test)
@@ -82,16 +83,20 @@ def linear_regression(dataset_file_name, train_data_perc, penalty, k, degree, ma
 
 def plot_learning_curves(dataset_file_name, penalty, k, degree, max_iter = 5, start = 10, stop = 100, step = 10, shuffle = True, do_PCA = False, random_seed = CONST_RANDOM_SEED):
 	x_axis = [] 										# train_data_perc
-	y_train, y_test = [], [] 							# MSE
+	y_train, y_test = {}, {}
 
 	for train_data_perc in range(start, stop, step):
-		train_error, test_error = linear_regression(file_name, train_data_perc, penalty, k, degree, max_iter, shuffle, do_PCA, random_seed)
+		for d in degree:
+			if d not in y_train: y_train[d] = []
+			if d not in y_test: y_test[d] = []
+			train_error, test_error = linear_regression(file_name, train_data_perc, penalty, k, d, max_iter, shuffle, do_PCA, random_seed)
+			y_train[d].append(train_error)
+			y_test[d].append(test_error)
 		x_axis.append(train_data_perc)
-		y_train.append(train_error)
-		y_test.append(test_error)
 
-	plt.plot(x_axis, y_train, label = 'train')
-	plt.plot(x_axis, y_test, label = 'test')
+	for d in degree:
+		plt.plot(x_axis, y_test[d], label = 'degree-' + str(d))
+	# plt.plot(x_axis, y_test, label = 'test')
 	plt.legend(bbox_to_anchor = (0., 1.02, 1., .102), loc = 3, ncol = 2, mode = "expand", borderaxespad = 0.)
 	plt.show()
 
@@ -113,11 +118,11 @@ if __name__ == '__main__':
 
 	file_name = os.path.join(os.path.dirname(__file__), 'data/'+ 'transformed-student' + choice)
 	penalty = sys.argv[2] 								# l1 for LASSO, l2 for ridge
-	degree = 1											# atmost degree of polynomial features
+	degree = 2											# atmost degree of polynomial features
 	k = 10 												# for k-fold cross validation
 	train_data_perc = 50
-	max_iter = 5 										# number of iterations of SGD
+	max_iter = 20 										# number of iterations of SGD
 	
 	# linear_regression(file_name, train_data_perc, penalty, k, degree, max_iter)
 	
-	plot_learning_curves(file_name, penalty, k, degree, max_iter, do_PCA = True)
+	plot_learning_curves(file_name, penalty, k, [1, 2], max_iter, do_PCA = True)
